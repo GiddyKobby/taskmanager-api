@@ -6,3 +6,7 @@ class TaskSchema(Schema):
     description = fields.Str()  # 👈 added description
     done = fields.Bool()
     created_at = fields.DateTime(dump_only=True)
+
+class TaskUpdateSchema(Schema):
+    title = fields.Str(validate=validate.Length(min=1))
+    done = fields.Bool()

@@ -2,11 +2,12 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models import Task
 from ..extensions import db, cache
-from ..schemas import TaskSchema
+from ..schemas import TaskSchema, TaskUpdateSchema
 
 task_bp = Blueprint('tasks', __name__)
 task_schema = TaskSchema()
 tasks_schema = TaskSchema(many=True)
+task_update_schema = TaskUpdateSchema()
 
 @task_bp.route('/', methods=['GET'])
 @jwt_required()
@@ -56,3 +57,50 @@ def create_task():
     cache.clear()  # for demo; in prod, clear user-specific cache keys
 
     return task_schema.dump(task), 201
+
+# 🔹 GET a single task by ID
+@task_bp.route('/<int:task_id>', methods=['GET'])
+@jwt_required()
+def get_task(task_id):
+    user_id = get_jwt_identity()
+    task = Task.query.filter_by(id=task_id, user_id=user_id).first()
+    if not task:
+        return {"error": "Task not found"}, 404
+    return task_schema.dump(task)
+
+# 🔹 UPDATE (PUT/PATCH) a task
+@task_bp.route('/<int:task_id>', methods=['PUT', 'PATCH'])
+@jwt_required()
+def update_task(task_id):
+    user_id = get_jwt_identity()
+    task = Task.query.filter_by(id=task_id, user_id=user_id).first()
+    if not task:
+        return {"error": "Task not found"}, 404
+    
+    data = request.get_json() or {}
+    errors = task_update_schema.validate(data)
+    if errors:
+        return {"errors": errors}, 400
+
+    if "title" in data:
+        task.title = data["title"]
+    if "done" in data:
+        task.done = data["done"]
+
+    db.session.commit()
+    cache.clear()
+    return task_schema.dump(task), 200
+
+# 🔹 DELETE a task
+@task_bp.route('/<int:task_id>', methods=['DELETE'])
+@jwt_required()
+def delete_task(task_id):
+    user_id = get_jwt_identity()
+    task = Task.query.filter_by(id=task_id, user_id=user_id).first()
+    if not task:
+        return {"error": "Task not found"}, 404
+    
+    db.session.delete(task)
+    db.session.commit()
+    cache.clear()
+    return {"message": "Task deleted"}, 200
