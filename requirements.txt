@@ -4,3 +4,4 @@ djangorestframework-simplejwt>=5.3,<6.0
 django-cors-headers>=4.4,<5.0
 psycopg2-binary>=2.9,<3.0   # only if you’ll use PostgreSQL
 python-dotenv>=1.0,<2.0
+Flask-Caching

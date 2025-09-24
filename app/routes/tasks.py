@@ -5,6 +5,11 @@ from ..extensions import db, cache
 from marshmallow import ValidationError
 from ..schemas import TaskSchema, TaskUpdateSchema
 from app import cache
+from flask import request
+from app.schemas.task_schema import task_schema, task_update_schema, tasks_schema
+from app.services.task_service import create_task, update_task
+from app.models import Task
+
 
 task_bp = Blueprint('tasks', __name__)
 task_schema = TaskSchema()
@@ -49,6 +54,19 @@ def list_tasks():
     current_app.logger.info(f"Tasks listed for user {user_id}, page {page}")
     return result
 
+# Add task
+@task_bp.route("/", methods=["POST"])
+@jwt_required()
+def add_task():
+    user_id = get_jwt_identity()
+    data = request.get_json() or {}
+    try:
+        validated = task_schema.load(data)
+    except ValidationError as err:
+        return {"errors": err.messages}, 422
+
+    task = create_task(user_id, validated)
+    return task_schema.dump(task), 201
 
 # 🔹 CREATE task
 @task_bp.route('/', methods=['POST'])
