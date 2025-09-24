@@ -1,6 +1,7 @@
 from flask import Flask
 from .config import Config
 from .extensions import db, migrate, jwt, cache, limiter
+from .errors import register_error_handlers
 
 def create_app(config_class=Config):
     app = Flask(__name__, instance_relative_config=False)
@@ -23,5 +24,7 @@ def create_app(config_class=Config):
     @app.route("/")
     def home():
         return {"status": "ok", "service": "Task Manager API"}
+    
+    register_error_handlers(app)
 
     return app
