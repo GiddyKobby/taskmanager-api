@@ -4,6 +4,7 @@ from ..models import Task
 from ..extensions import db, cache
 from marshmallow import ValidationError
 from ..schemas import TaskSchema, TaskUpdateSchema
+from app import cache
 
 task_bp = Blueprint('tasks', __name__)
 task_schema = TaskSchema()
@@ -14,6 +15,7 @@ task_update_schema = TaskUpdateSchema()
 # 🔹 LIST tasks with pagination/filter
 @task_bp.route('/', methods=['GET'])
 @jwt_required()
+@cache.cached(timeout=60, query_string=True)
 def list_tasks():
     user_id = get_jwt_identity()
 
@@ -22,13 +24,16 @@ def list_tasks():
     done_filter = request.args.get('done')
 
     query = Task.query.filter_by(user_id=user_id)
+    
     if done_filter is not None:
         if done_filter.lower() in ["true", "1"]:
             query = query.filter_by(done=True)
         elif done_filter.lower() in ["false", "0"]:
             query = query.filter_by(done=False)
-
+      
+    # ✅ Ensure stable pagination results  
     query = query.order_by(Task.id)
+
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
     result = {

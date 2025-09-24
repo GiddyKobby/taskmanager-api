@@ -6,6 +6,9 @@ import flask_monitoringdashboard as dashboard
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+from flask_caching import Cache
+
+cache = cache()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -17,7 +20,13 @@ def create_app(config_class=Config):
     jwt.init_app(app)
     cache.init_app(app)
     limiter.init_app(app)
+    
+    # Caching setup (simple in-memory cache for dev)
+    app.config["CACHE_TYPE"] = "SimpleCache"
+    app.config["CACHE_DEFAULT_TIMEOUT"] = 60  # 1 min
 
+    cache.init_app(app)
+    
     # register blueprints
     from .routes.auth import auth_bp
     from .routes.tasks import task_bp
