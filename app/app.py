@@ -1,6 +1,6 @@
 from flask import Flask
-from .extensions import jwt
-from auth_routes import auth_bp
+from extensions import jwt
+
 
 def create_app():
     app = Flask(__name__)

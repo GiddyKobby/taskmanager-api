@@ -28,8 +28,9 @@ def list_tasks():
         elif done_filter.lower() in ["false", "0"]:
             query = query.filter_by(done=False)
 
-    query = query.order_by(Task.id)
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    pagination = query.order_by(Task.id).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
 
     result = {
         "tasks": tasks_schema.dump(pagination.items),
@@ -38,11 +39,9 @@ def list_tasks():
         "pages": pagination.pages,
         "per_page": pagination.per_page,
     }
-    cache_key = f"user:{user_id}:tasks:page{page}"
-    cache.set(cache_key, result)
 
     current_app.logger.info(f"Tasks listed for user {user_id}, page {page}")
-    return result
+    return result, 200
 
 
 # 🔹 CREATE task
@@ -66,7 +65,7 @@ def add_task():
         return task_schema.dump(task), 201
     except Exception as e:
         current_app.logger.error(f"DB error creating task: {str(e)}")
-        return {"error": "Internal server error"}, 500
+        return {"errors": {"db": "Internal server error"}}, 500
 
 
 # 🔹 GET single task
@@ -78,10 +77,10 @@ def get_task(task_id):
 
     if not task:
         current_app.logger.warning(f"Task {task_id} not found for user {user_id}")
-        return {"error": "Task not found"}, 404
+        return {"errors": {"task": "Not found"}}, 404
 
     current_app.logger.info(f"Task {task_id} retrieved by user {user_id}")
-    return task_schema.dump(task)
+    return task_schema.dump(task), 200
 
 
 # 🔹 UPDATE task
@@ -95,7 +94,7 @@ def edit_task(task_id):
         current_app.logger.warning(
             f"Update failed: Task {task_id} not found for user {user_id}"
         )
-        return {"error": "Task not found"}, 404
+        return {"errors": {"task": "Not found"}}, 404
 
     data = request.get_json() or {}
     try:
@@ -109,10 +108,10 @@ def edit_task(task_id):
     try:
         updated_task = update_task(task, validated)
         current_app.logger.info(f"Task {task_id} updated by user {user_id}")
-        return task_schema.dump(updated_task)
+        return task_schema.dump(updated_task), 200
     except Exception as e:
         current_app.logger.error(f"DB error updating task: {str(e)}")
-        return {"error": "Internal server error"}, 500
+        return {"errors": {"db": "Internal server error"}}, 500
 
 
 # 🔹 DELETE task
@@ -126,15 +125,15 @@ def delete_task(task_id):
         current_app.logger.warning(
             f"Delete failed: Task {task_id} not found for user {user_id}"
         )
-        return {"error": "Task not found"}, 404
+        return {"errors": {"task": "Not found"}}, 404
 
     try:
         db.session.delete(task)
         db.session.commit()
         cache.clear()
         current_app.logger.info(f"Task {task_id} deleted by user {user_id}")
-        return {"message": "Task deleted"}, 200
+        return {"message": "Task deleted"}, 200  # or 204 with empty body
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"DB error deleting task: {str(e)}")
-        return {"error": "Internal server error"}, 500
+        return {"errors": {"db": "Internal server error"}}, 500

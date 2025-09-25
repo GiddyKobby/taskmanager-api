@@ -7,27 +7,29 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 
-# Blueprints (import from __init__.py of each package)
-from app.routes import task_bp
-from app.auth import auth_bp
-
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # --- Extensions ---
+    # --- Security / JWT ---
+    app.config["JWT_SECRET_KEY"] = "super-secret-key"  # ⚠️ change in production
+
+    # --- Cache defaults (set BEFORE init_app) ---
+    app.config.setdefault("CACHE_TYPE", "SimpleCache")
+    app.config.setdefault("CACHE_DEFAULT_TIMEOUT", 60)
+
+    # --- Initialize extensions ---
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     cache.init_app(app)
     limiter.init_app(app)
 
-    # --- Caching setup (simple in-memory cache for dev) ---
-    app.config.setdefault("CACHE_TYPE", "SimpleCache")
-    app.config.setdefault("CACHE_DEFAULT_TIMEOUT", 60)
-
     # --- Blueprints ---
+    from .routes import task_bp
+    from .auth.routes import auth_bp
+
     app.register_blueprint(task_bp, url_prefix="/tasks")
     app.register_blueprint(auth_bp, url_prefix="/auth")
 
@@ -54,7 +56,10 @@ def create_app(config_class=Config):
     ))
     file_handler.setLevel(logging.INFO)
 
-    app.logger.addHandler(file_handler)
+    # Prevent duplicate handlers in debug/reload
+    if not app.logger.handlers:
+        app.logger.addHandler(file_handler)
+
     app.logger.setLevel(logging.INFO)
     app.logger.info("App startup")
 
