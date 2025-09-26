@@ -1,0 +1,6 @@
+2025-09-26 19:44:43,899 INFO: App startup [in C:\taskmanager\app\__init__.py:72]
+2025-09-26 19:44:45,128 INFO: App startup [in C:\taskmanager\app\__init__.py:72]
+2025-09-26 19:44:46,068 INFO: Task created by user 1: My first task [in C:\taskmanager\app\routes\tasks.py:65]
+2025-09-26 19:46:16,571 INFO: App startup [in C:\taskmanager\app\__init__.py:72]
+2025-09-26 19:46:17,952 INFO: App startup [in C:\taskmanager\app\__init__.py:72]
+2025-09-26 19:46:18,845 INFO: Task created by user 1: My first task [in C:\taskmanager\app\routes\tasks.py:65]
