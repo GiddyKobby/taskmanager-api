@@ -5,6 +5,7 @@ from .models import User, Task  # 🔹 import models BEFORE create_all
 from .errors import register_error_handlers
 import flask_monitoringdashboard as dashboard
 import logging
+from flasgger import Swagger
 from logging.handlers import RotatingFileHandler
 import os
 
@@ -21,19 +22,21 @@ def create_app(config_class=Config):
     app.config.setdefault("CACHE_DEFAULT_TIMEOUT", 60)
 
     # --- Initialize extensions ---
+    from app.extensions import db,jwt, cache, limiter
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     cache.init_app(app)
     limiter.init_app(app)
+    Swagger(app)
 
     # 🔹 Rebuild tables (make sure models are imported before this!)
     with app.app_context():
         db.create_all()
 
     # --- Blueprints ---
-    from .routes import task_bp
-    from .auth.routes import auth_bp
+    from app.routes.tasks import task_bp
+    from app.routes.auth import auth_bp
 
     app.register_blueprint(task_bp, url_prefix="/tasks")
     app.register_blueprint(auth_bp, url_prefix="/auth")
