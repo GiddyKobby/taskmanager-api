@@ -8,7 +8,8 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)  # store hashed pw
+    password_hash = db.Column(db.String(200), nullable=False)  # 🔹 clearer naming
+    role = db.Column(db.String(20), default="user")            # 🔹 user/admin
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # One-to-many: a user can have many tasks
@@ -16,11 +17,11 @@ class User(db.Model):
 
     def set_password(self, password: str):
         """Hash and store password."""
-        self.password = generate_password_hash(password)
+        self.password_hash = generate_password_hash(password)
 
     def check_password(self, password: str) -> bool:
         """Verify password hash."""
-        return check_password_hash(self.password, password)
+        return check_password_hash(self.password_hash, password)
 
     def __repr__(self):
         return f"<User {self.username}>"
@@ -40,3 +41,6 @@ class Task(db.Model):
 
     def __repr__(self):
         return f"<Task {self.title}>"
+    
+
+    

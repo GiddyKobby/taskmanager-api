@@ -6,6 +6,7 @@ from app.schemas.task_schema import task_schema, tasks_schema, task_update_schem
 from app.services.task_service import create_task, update_task
 from app.models import Task
 from app.extensions import db, cache
+from app.auth.decorators import role_required
 
 task_bp = Blueprint("tasks", __name__)
 
@@ -115,8 +116,10 @@ def edit_task(task_id):
 
 
 # 🔹 DELETE task
+# Only admins can delete tasks
 @task_bp.route("/<int:task_id>", methods=["DELETE"])
 @jwt_required()
+@role_required("admin")
 def delete_task(task_id):
     user_id = get_jwt_identity()
     task = Task.query.filter_by(id=task_id, user_id=user_id).first()

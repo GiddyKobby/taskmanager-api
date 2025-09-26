@@ -1,6 +1,7 @@
 from flask import Flask
 from .config import Config
 from .extensions import db, migrate, jwt, cache, limiter
+from .models import User, Task  # 🔹 import models BEFORE create_all
 from .errors import register_error_handlers
 import flask_monitoringdashboard as dashboard
 import logging
@@ -25,6 +26,10 @@ def create_app(config_class=Config):
     jwt.init_app(app)
     cache.init_app(app)
     limiter.init_app(app)
+
+    # 🔹 Rebuild tables (make sure models are imported before this!)
+    with app.app_context():
+        db.create_all()
 
     # --- Blueprints ---
     from .routes import task_bp
